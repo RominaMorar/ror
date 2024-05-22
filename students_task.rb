@@ -1,16 +1,42 @@
 require 'date'
 
 module Validation
-  def self.match(pattern, text)
+  def match(pattern, text)
     pattern.match?(text)
   end
 
-  def self.date_in_range(from, to, date)
+  def date_in_range(from, to, date)
     from <= date && date <= to
   end
+
+  def validate_name(name, field)
+    raise ArgumentError, "#{field} is invalid" unless match(/\A[A-Z][a-z]*\z/, name)
+    name
+  end
+
+  def validate_date(date)
+    parsed_date = Date.parse(date)
+    today = Date.today
+    raise ArgumentError, "Date of birth is out of valid range" unless date_in_range(Date.new(1900, 1, 1), today, parsed_date)
+    parsed_date
+  end
+
+  def validate_student_id(id)
+    raise ArgumentError, "Student ID is invalid" unless match(/\A\d{6}\z/, id)
+    id
+  end
+
+  def validate_group_name(name)
+    raise ArgumentError, "Group name is invalid" unless match(/\A\d+\z/, name)
+    name
+  end
+
+  module_function :match, :date_in_range, :validate_name, :validate_date, :validate_student_id, :validate_group_name
 end
 
 class Student
+  include Validation
+
   attr_accessor :first_name, :last_name, :birth_date, :student_id
 
   def initialize(first_name, last_name, birth_date, student_id)
@@ -19,44 +45,20 @@ class Student
     @birth_date = validate_date(birth_date)
     @student_id = validate_student_id(student_id)
   end
-
-  private
-
-  def validate_name(name, field)
-    raise ArgumentError, "#{field} is invalid" unless Validation.match(/\A[A-Z][a-z]*\z/, name)
-    name
-  end
-
-  def validate_date(date)
-    parsed_date = Date.parse(date)
-    today = Date.today
-    raise ArgumentError, "Date of birth is out of valid range" unless Validation.date_in_range(Date.new(1900, 1, 1), today, parsed_date)
-    parsed_date
-  end
-
-  def validate_student_id(id)
-    raise ArgumentError, "Student ID is invalid" unless Validation.match(/\A\d{6}\z/, id)
-    id
-  end
 end
 
 class Group
+  include Validation
+
   attr_accessor :name, :students
 
   def initialize(name)
-    @name = validate_name(name)
+    @name = validate_group_name(name)
     @students = []
   end
 
   def add_student(student)
     @students << student
-  end
-
-  private
-
-  def validate_name(name)
-    raise ArgumentError, "Group name is invalid" unless Validation.match(/\A\d+\z/, name)
-    name
   end
 end
 
